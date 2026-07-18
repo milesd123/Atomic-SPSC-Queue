@@ -107,7 +107,7 @@ private:
     std::thread worker_from;
     std::atomic<bool> running{false};
 
-    // Place all of the writer/reader and their variables in the same cache line
+    // Place all of the writer/reader and their variables in different cache lines
     alignas(64) std::atomic_size_t writer{0};
     alignas(64) std::atomic_size_t reader{0};
 };
