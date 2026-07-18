@@ -13,6 +13,7 @@ public:
     void connect();
     virtual void WaitRead() override;
     virtual void WaitWrite() override;
+    virtual void Close() override;
 private:
     asio::ip::tcp::socket socket;
     asio::ip::tcp::acceptor acceptor;

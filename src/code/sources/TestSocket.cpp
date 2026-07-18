@@ -53,6 +53,11 @@ void TestSocket::WaitRead()
 
 }
 
+void TestSocket::Close()
+{
+    
+}
+
 
 // block until ready to write
 void TestSocket::WaitWrite()

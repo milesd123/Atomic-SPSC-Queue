@@ -10,6 +10,7 @@ public:
     virtual size_t available() override;
     virtual void WaitRead() override;
     virtual void WaitWrite() override;
+    virtual void Close() override;
     void SetQueueSize(size_t);
     size_t GetReadOperations();
     size_t GetWriteOperations();

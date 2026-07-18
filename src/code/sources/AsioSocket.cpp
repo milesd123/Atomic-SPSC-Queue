@@ -10,18 +10,32 @@ AsioSocket::AsioSocket
 size_t AsioSocket::write(void* buffer, size_t amount)
 {
 
-    return socket.write_some(asio::mutable_buffer(buffer, amount), ec_w);
+    // return socket.write_some(asio::mutable_buffer(buffer, amount), ec_w);
 
     size_t write = socket.write_some(asio::mutable_buffer(buffer, amount), ec_w);
+    static volatile int flag = 1;
+    if(ec_w && flag)
+    {
+        std::cout << "[W]"<<std::this_thread::get_id();
+        flag = 0;
+    }
+    return write;
 }
 
 // read from the socket into a buffer
 size_t AsioSocket::read(void* buffer, size_t amount)
 {
-    return socket.read_some(asio::mutable_buffer(buffer, amount), ec_r);
+    // return socket.read_some(asio::mutable_buffer(buffer, amount), ec_r);
 
     // return asio::read(socket, asio::mutable_buffer(buffer, amount), ec_r);
     size_t read = socket.read_some(asio::mutable_buffer(buffer, amount), ec_r);
+    static volatile int flag = 1;
+    if(ec_r && flag)
+    {
+        std::cout << "[R]"<<std::this_thread::get_id();
+        flag = 0;
+    }
+    return read;
 }
 
 // return the available bytes in the socket
@@ -34,7 +48,9 @@ size_t AsioSocket::available()
 void AsioSocket::await_connection()
 {
 
-    acceptor.open(endpoint.protocol());
+    acceptor.open(endpoint.protocol()); // create OS socket descriptor
+    acceptor.set_option(asio::ip::tcp::acceptor::reuse_address(true));
+
     acceptor.bind(endpoint);
     acceptor.listen();
 
@@ -69,6 +85,13 @@ void AsioSocket::WaitWrite()
 {
     socket.wait(asio::ip::tcp::socket::wait_write);
     // while(!socket.is_open());
+}
+
+void AsioSocket::Close()
+{
+    asio::error_code ec;
+    socket.cancel(ec);
+    socket.close(ec);
 }
 
 // private:

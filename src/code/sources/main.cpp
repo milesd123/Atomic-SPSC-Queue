@@ -16,7 +16,14 @@ void SocketTest(int n, Benchmark* b);
 
 int main(int argc, char* argv[]){
     try{
-        MinrcraftProxy("mc.hypixel.net", "25565");
+        if(argc == 2)
+        {
+            MinrcraftProxy(argv[1], "25565");
+        }else{
+            MinrcraftProxy("na.hypixel.net", "25565");
+        }
+
+        // MinrcraftProxy("minemen.club", "25565");
     } catch(std::system_error error)
     {
         std::cout << error.what() << std::endl;
@@ -45,12 +52,17 @@ void MinrcraftProxy(const char* hostname, const char* port)
     alignas(64)     uint8_t client_buffer[BUFFERSIZE];
 
     std::vector<asio::ip::tcp::endpoint> endpoints;
-    asio::ip::tcp::endpoint localhost(asio::ip::make_address("127.0.0.1"), 25565);
+    asio::ip::tcp::endpoint localhost(asio::ip::make_address_v4("127.0.0.1"), 25565);
     asio::io_context io_context_;
     asio::error_code ec;
 
     // Get hypixel endpoints
     ProxyUtils::resolve_endpoints(hostname, port, endpoints, io_context_, ec);
+    
+    for(const auto& ep : endpoints)
+    {
+        std::cout << "Endpoint: " << ep.address().to_string() << std::endl;
+    }
 
     if(endpoints.empty())
     {
@@ -58,21 +70,24 @@ void MinrcraftProxy(const char* hostname, const char* port)
         return;
     }
 
-    AsioSocket ClientSocket(io_context_, localhost);
-    AsioSocket ServerSocket(io_context_, endpoints[0]);
-
-    AtomicSPSCQueue<uint8_t> ClientToServerQueue(&ClientSocket, &ServerSocket, BUFFERSIZE, server_buffer);
-    AtomicSPSCQueue<uint8_t> ServerToClientQueue(&ServerSocket, &ClientSocket, BUFFERSIZE, client_buffer);
-
-    ClientSocket.await_connection();
-    ServerSocket.connect();
-
-    ClientToServerQueue.Start();
-    ServerToClientQueue.Start();
-
-
-    ClientToServerQueue.WaitForStop();
-    ServerToClientQueue.WaitForStop();
+    int i = 0;
+    while(true){
+        std::cout << "iteration " << i++ << std::endl;
+        AsioSocket ClientSocket(io_context_, localhost);
+        AsioSocket ServerSocket(io_context_, endpoints[0]);
+        
+        AtomicSPSCQueue<uint8_t> ClientToServerQueue(&ClientSocket, &ServerSocket, BUFFERSIZE, server_buffer, "C->S");
+        AtomicSPSCQueue<uint8_t> ServerToClientQueue(&ServerSocket, &ClientSocket, BUFFERSIZE, client_buffer, "S->C");
+        
+        ClientSocket.await_connection();
+        ServerSocket.connect();
+        
+        ClientToServerQueue.Start();
+        ServerToClientQueue.Start();
+        
+        ClientToServerQueue.WaitForStop();
+        ServerToClientQueue.WaitForStop();
+    }
 }
 
 void SocketTest(int n, Benchmark* b)
@@ -93,7 +108,7 @@ void SocketTest(int n, Benchmark* b)
     sock.SetSource(source_buffer, source_buffer + test_buffer_size);
 
     // create our worker
-    AtomicSPSCQueue<uint8_t> queue(&sock, &sock, BUFFERSIZE, queue_buffer);
+    AtomicSPSCQueue<uint8_t> queue(&sock, &sock, BUFFERSIZE, queue_buffer, "A");
 
     sock.SetStoppingFunction([&](){queue.Stop();});
 

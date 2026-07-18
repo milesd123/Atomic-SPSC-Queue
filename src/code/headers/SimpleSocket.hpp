@@ -11,4 +11,5 @@ public:
     virtual size_t available() = 0;
     virtual void WaitRead() = 0;
     virtual void WaitWrite() = 0;
+    virtual void Close() = 0;
 };
