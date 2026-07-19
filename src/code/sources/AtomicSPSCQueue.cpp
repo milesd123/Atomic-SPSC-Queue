@@ -1,7 +1,5 @@
 #include "../headers/AsioSocket.hpp"
 
-#define FastModulo(x) (x & 1023)
-
 // Atomic Single Producer Single Consumer Queue 
 // 'to' and 'from' should be treated as 'to/from this object'
 
@@ -9,7 +7,11 @@ AtomicSPSCQueue::AtomicSPSCQueue
 (
     SimpleSocket* to, SimpleSocket* from, size_t buf_size, uint8_t* buf, const char* name
 )
-:   source_socket(to), dest_socket(from), buffer(buf), buffer_size(buf_size), name(name) {}
+:   source_socket(to), dest_socket(from), buffer(buf), buffer_size(buf_size), name(name) 
+{
+    // assert buffer is a power of 2 for FastModulo() to work correctly
+    assert(buf_size & (buf_size - 1) == 0);
+}
 
 void AtomicSPSCQueue::Start()
 {
@@ -125,4 +127,9 @@ void AtomicSPSCQueue::WriteToBuffer()
     }
     std::cout << name << " WriteToBuffer Stopped: " << std::this_thread::get_id() <<std::endl;
 
+}
+
+inline size_t AtomicSPSCQueue::FastModulo(size_t n)
+{
+    return n & (buffer_size - 1);
 }

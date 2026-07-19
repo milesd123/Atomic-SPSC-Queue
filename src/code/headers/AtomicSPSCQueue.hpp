@@ -12,7 +12,7 @@ public:
     void Stop();
 
 private:    
-    void FastModulo(size_t);
+    inline size_t FastModulo(size_t);
     void ReadFromBuffer();
     void WriteToBuffer();
 
